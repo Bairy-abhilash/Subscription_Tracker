@@ -1,18 +1,21 @@
 import mongoose from 'mongoose';
+import dns from "node:dns";
 import {DB_URI, NODE_ENV} from '../config/env.js';
- 
-if(!DB_URI) {
-throw new Error('Please define the MONGODB_URI environment variable inside .env.<development|production>.local')
-}
+
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
 const connectToDatabase = async () => {
-    try {
-        await mongoose.connect(DB_URI);
-        console.log(`Connected to database in ${NODE_ENV} mode`);
-    } catch (error) {
-        console.error('Error connecting to the database:', error);
-
-        process.exit(1);
+    if (!DB_URI) {
+        console.warn('No database URI configured. Skipping database connection.');
+        return;
     }
-}
+
+    try {
+        await mongoose.connect(DB_URI, { serverSelectionTimeoutMS: 5000 });
+        console.log(`Connected to MongoDB database in ${NODE_ENV || 'development'} mode`);
+    } catch (error) {
+        console.error('Error connecting to the database:', error.message || error);
+    }
+};
+
 export default connectToDatabase;
